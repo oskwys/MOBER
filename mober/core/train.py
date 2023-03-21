@@ -81,6 +81,7 @@ def train_model(model_BatchAE,
     src_model_file =  os.path.join(run_dir, "models", "src_adv_final.model")
                                   
     for epoch in range(args.epochs):
+        print(epoch, '/', args.epochs)
         if early_stop: break
         
         epoch_ae_loss      = 0.0
@@ -122,7 +123,8 @@ def train_model(model_BatchAE,
         log.log_metric("train_loss_adv", epoch_src_adv_loss / len(train_loader.dataset), epoch)
         log.log_metric("train_loss_tot", epoch_tot_loss     / len(train_loader.dataset), epoch)
         
-        
+        #print('loss_ae: ', loss_ae.detach().item())
+        print('epoch_tot_loss: ', epoch_tot_loss)
         # Validation
         if args.val_set_size != 0:
             epoch_ae_loss_val = validation(model_BatchAE,model_src_adv,val_loader,device, args, log, src_weights_src_adv,epoch)
