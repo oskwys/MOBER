@@ -19,7 +19,7 @@ from mober.models.mlp import MLP
 
 from mober.loss.classification import loss_function_classification
 from mober.loss.vae import loss_function_vae
-
+import torch.nn.utils.prune as prune
 import scanpy as sc
 
 def set_seed(seed):
@@ -200,8 +200,18 @@ def main(args):
     
     src_weights_src_adv = torch.tensor(
         data_utils.get_class_weights(adata.obs.data_source, args.balanced_sources_src_adv), dtype=torch.float).to(device)
-    
-    
+
+    mask_1 = np.zeros((1000, 256))
+    for i in range(1000):
+        for j in range(256):
+            if np.abs(i - j) < 3:
+                mask_1[i, j] = 1
+    mask_1 = torch.Tensor(mask_1.T)
+    print(mask_1)
+    prune.custom_from_mask(model_BatchAE.encoder.fc1, 'weight', mask=mask_1)
+    print('PRUNED !')
+    print(model_BatchAE.encoder.fc1.weight.detach().numpy())
+
     train_model(model_BatchAE, 
                 optimizer_BatchAE, 
                 model_src_adv, 
