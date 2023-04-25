@@ -201,16 +201,18 @@ def main(args):
     src_weights_src_adv = torch.tensor(
         data_utils.get_class_weights(adata.obs.data_source, args.balanced_sources_src_adv), dtype=torch.float).to(device)
 
+    print(model_BatchAE.encoder.fc1.weight.to('cpu').detach().numpy())
     mask_1 = np.zeros((1000, 256))
     for i in range(1000):
-        for j in range(256):
-            if np.abs(i - j) < 3:
-                mask_1[i, j] = 1
-    mask_1 = torch.Tensor(mask_1.T)
+        for j in range(250):
+            if np.abs(i - 4 * j + 1) <= 3:
+                mask_1[i, j:4 * j] = 1
+    mask_1 = torch.Tensor(mask_1.T).to("cuda")
     print(mask_1)
     prune.custom_from_mask(model_BatchAE.encoder.fc1, 'weight', mask=mask_1)
+    prune.remove(model_BatchAE.encoder.fc1, 'weight')
     print('PRUNED !')
-    print(model_BatchAE.encoder.fc1.weight.detach().numpy())
+    print(model_BatchAE.encoder.fc1.weight.to('cpu').detach().numpy())
 
     train_model(model_BatchAE, 
                 optimizer_BatchAE, 
@@ -223,6 +225,5 @@ def main(args):
                 device,
                 log,
                 args)
-    
+    print(model_BatchAE.encoder.fc1.weight.to('cpu').detach().numpy())
     log.end_log()
-    
