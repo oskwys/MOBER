@@ -108,16 +108,16 @@ class BatchVAE(nn.Module):
         # addiing MASK to layer 1
         S = scipy.sparse.random(n_genes, 256, density=0.15, random_state=42)
         S = S.A
-        S[S > 0] = 1        
-        mask_1 = torch.Tensor(S.T).to("cuda")
+        S[S > 0] = 1
+        mask_1 = torch.Tensor(S.T).to("cpu")
         print(mask_1)
         prune.custom_from_mask(self.encoder.fc1, 'weight', mask=mask_1)
 
         # addiing MASK to layer 2
-        S = scipy.sparse.random(256, enc_dim, density=0.15, random_state=42)
+        S = scipy.sparse.random(256, 128, density=0.15, random_state=42)
         S = S.A
         S[S > 0] = 1
-        mask_2 = torch.Tensor(S.T).to("cuda")
+        mask_2 = torch.Tensor(S.T).to("cpu")
         print(mask_2)
         prune.custom_from_mask(self.encoder.fc2, 'weight', mask=mask_2)
 
