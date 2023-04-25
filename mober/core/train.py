@@ -133,13 +133,16 @@ def train_model(model_BatchAE,
             if epoch_ae_loss_val < best_model_loss: # there is an improvement, update the best_val_loss and save the model
                 best_model_loss = epoch_ae_loss_val
                 waited_epochs = 0
+                prune.remove(model_BatchAE.encoder.fc1, "weight")
+                prune.remove(model_BatchAE.encoder.fc2, "weight")
                 model_utils.save_model(model_BatchAE, optimizer_BatchAE, epoch, epoch_ae_loss/len(train_loader.dataset)     ,ae_model_file , device)
                 model_utils.save_model(model_src_adv, optimizer_src_adv, epoch, epoch_src_adv_loss/len(train_loader.dataset),src_model_file, device)
 
             else:
                 waited_epochs += 1
                 if waited_epochs > args.patience: early_stop = True
-                
+    prune.remove(model_BatchAE.encoder.fc1, "weight")
+    prune.remove(model_BatchAE.encoder.fc2, "weight")
     if args.val_set_size == 0: 
         model_utils.save_model(model_BatchAE, optimizer_BatchAE, epoch, epoch_ae_loss/len(train_loader.dataset)     ,ae_model_file , device)
         model_utils.save_model(model_src_adv, optimizer_src_adv, epoch, epoch_src_adv_loss/len(train_loader.dataset),src_model_file, device)
