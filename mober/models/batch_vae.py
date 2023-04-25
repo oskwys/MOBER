@@ -1,7 +1,7 @@
 import torch.nn as nn
 import torch
 from torch.distributions import Normal
-
+import torch.nn.utils.prune as prune
 
 class Encoder(nn.Module):
     """
@@ -102,6 +102,16 @@ class BatchVAE(nn.Module):
 
         self.encoder = Encoder(n_genes, enc_dim)
         self.decoder = Decoder(n_genes, enc_dim, n_batch)
+
+        # addiing MASK
+        mask_1 = np.zeros((1000, 256))
+        for i in range(1000):
+            for j in range(250):
+                if np.abs(i - 4 * j + 1) <= 3:
+                    mask_1[i, j:4 * j] = 1
+        mask_1 = torch.Tensor(mask_1.T).to("cuda")
+        print(mask_1)
+        prune.custom_from_mask(self.encoder.fc1, 'weight', mask=mask_1)
 
     def forward(self, x, batch):
         means, stdev, enc = self.encoder(x)
