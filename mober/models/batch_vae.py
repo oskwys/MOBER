@@ -1,3 +1,4 @@
+import pandas as pd
 import torch.nn as nn
 import torch
 from torch.distributions import Normal
@@ -106,17 +107,19 @@ class BatchVAE(nn.Module):
         self.decoder = Decoder(n_genes, enc_dim, n_batch)
 
         # addiing MASK to layer 1
-        S = scipy.sparse.random(n_genes, 256, density=0.15, random_state=42)
-        S = S.A
-        S[S > 0] = 1
+        #S = scipy.sparse.random(n_genes, 256, density=0.15, random_state=42)
+        #S = S.A
+        #S[S > 0] = 1
+        S = pd.read_csv('mask_1.csv')
         mask_1 = torch.Tensor(S.T).to("cpu")
         print(mask_1)
         prune.custom_from_mask(self.encoder.fc1, 'weight', mask=mask_1)
 
         # addiing MASK to layer 2
-        S = scipy.sparse.random(256, 128, density=0.15, random_state=42)
-        S = S.A
-        S[S > 0] = 1
+        #S = scipy.sparse.random(256, 128, density=0.15, random_state=42)
+        #S = S.A
+        #S[S > 0] = 1
+        S = pd.read_csv('mask_2.csv')
         mask_2 = torch.Tensor(S.T).to("cpu")
         print(mask_2)
         prune.custom_from_mask(self.encoder.fc2, 'weight', mask=mask_2)
