@@ -6,29 +6,30 @@ import torch.nn.utils.prune as prune
 import numpy as np
 import scipy
 
+
 class Encoder(nn.Module):
     """
     Encoder that takes the original gene expression and produces the encoding.
 
     Consists of 3 FC layers.
     """
-    def __init__(self, n_genes, enc_dim):
+
+    def __init__(self, n_genes, f1_dim, f2_dim, enc_dim):
         super().__init__()
         self.activation = nn.SELU()
-        self.fc1 = nn.Linear(n_genes, 256)
-        self.bn1 = nn.BatchNorm1d(256, momentum=0.01, eps=0.001)
+        self.fc1 = nn.Linear(n_genes, f1_dim)
+        self.bn1 = nn.BatchNorm1d(f1_dim, momentum=0.01, eps=0.001)
         self.dp1 = nn.Dropout(p=0.1)
-        self.fc2 = nn.Linear(256, 128)
-        self.bn2 = nn.BatchNorm1d(128, momentum=0.01, eps=0.001)
+        self.fc2 = nn.Linear(f1_dim, f2_dim)
+        self.bn2 = nn.BatchNorm1d(f2_dim, momentum=0.01, eps=0.001)
         self.dp2 = nn.Dropout(p=0.1)
-    
-        self.linear_means = nn.Linear(128, enc_dim)
-        self.linear_log_vars = nn.Linear(128, enc_dim)
-    
+
+        self.linear_means = nn.Linear(f2_dim, enc_dim)
+        self.linear_log_vars = nn.Linear(f2_dim, enc_dim)
+
     def reparameterize(self, means, stdev):
-        
         return Normal(means, stdev).rsample()
-        
+
     def encode(self, x):
         # encode
         enc = self.fc1(x)
@@ -39,10 +40,10 @@ class Encoder(nn.Module):
         enc = self.bn2(enc)
         enc = self.activation(enc)
         enc = self.dp2(enc)
-        
+
         means = self.linear_means(enc)
         log_vars = self.linear_log_vars(enc)
-        
+
         stdev = torch.exp(0.5 * log_vars) + 1e-4
         z = self.reparameterize(means, stdev)
 
@@ -51,26 +52,26 @@ class Encoder(nn.Module):
     def forward(self, x):
         return self.encode(x)
 
-    
+
 class Decoder(nn.Module):
     """
     A decoder model that takes the encodings and a batch (source) matrix and produces decodings.
 
     Made up of 3 FC layers.
     """
-    def __init__(self, n_genes, enc_dim, n_batch):
+
+    def __init__(self, n_genes, f1_dim, f2_dim, enc_dim, n_batch):
         super().__init__()
         self.activation = nn.SELU()
         self.final_activation = nn.ReLU()
         self.fcb = nn.Linear(n_batch, n_batch)
         self.bnb = nn.BatchNorm1d(n_batch, momentum=0.01, eps=0.001)
-        self.fc4 = nn.Linear(enc_dim + n_batch, 128)
-        self.bn4 = nn.BatchNorm1d(128, momentum=0.01, eps=0.001)
-        self.fc5 = nn.Linear(128, 256)
-        self.bn5 = nn.BatchNorm1d(256, momentum=0.01, eps=0.001)
+        self.fc4 = nn.Linear(enc_dim + n_batch, f2_dim)
+        self.bn4 = nn.BatchNorm1d(f2_dim, momentum=0.01, eps=0.001)
+        self.fc5 = nn.Linear(f2_dim, f1_dim)
+        self.bn5 = nn.BatchNorm1d(f1_dim, momentum=0.01, eps=0.001)
 
-        self.out_fc = nn.Linear(256, n_genes)
-
+        self.out_fc = nn.Linear(f1_dim, n_genes)
 
     def forward(self, z, batch):
         # batch input
@@ -89,7 +90,7 @@ class Decoder(nn.Module):
         dec = self.bn5(dec)
         dec = self.activation(dec)
         dec = self.final_activation(self.out_fc(dec))
-        
+
         return dec
 
 
@@ -100,32 +101,39 @@ class BatchVAE(nn.Module):
     Decoder is symmetrical to encoder + Batch input.
     """
 
-    def __init__(self, n_genes, enc_dim, n_batch):
+    def __init__(self, n_genes, f1_dim, f2_dim, enc_dim, n_batch, loaded=False):
         super().__init__()
 
-        self.encoder = Encoder(n_genes, enc_dim)
-        self.decoder = Decoder(n_genes, enc_dim, n_batch)
+        self.encoder = Encoder(n_genes, f1_dim, f2_dim, enc_dim)
+        self.decoder = Decoder(n_genes, f1_dim, f2_dim, enc_dim, n_batch)
 
         # addiing MASK to layer 1
-        #S = scipy.sparse.random(n_genes, 256, density=0.15, random_state=42)
-        #S = S.A
-        #S[S > 0] = 1
-        S = pd.read_csv('mask_1.csv')
-        mask_1 = torch.Tensor(S.T).to("cpu")
-        print(mask_1)
-        prune.custom_from_mask(self.encoder.fc1, 'weight', mask=mask_1)
+        # S = scipy.sparse.random(n_genes, 256, density=0.15, random_state=42)
+        # S = S.A
+        # S[S > 0] = 1
+        if not loaded:
+            S = pd.read_csv(
+                '/home/owysocki/Insync/oskwys@gmail.com/Google Drive/SAFE_AI/CCE_DART/MOBER_results/masks/mask_1.csv',
+                index_col=0).values
 
-        # addiing MASK to layer 2
-        #S = scipy.sparse.random(256, 128, density=0.15, random_state=42)
-        #S = S.A
-        #S[S > 0] = 1
-        S = pd.read_csv('mask_2.csv')
-        mask_2 = torch.Tensor(S.T).to("cpu")
-        print(mask_2)
-        prune.custom_from_mask(self.encoder.fc2, 'weight', mask=mask_2)
+            mask_1 = torch.Tensor(S.T).to("cpu")
+            print(mask_1)
+            prune.custom_from_mask(self.encoder.fc1, 'weight', mask=mask_1)
+
+            # addiing MASK to layer 2
+            # S = scipy.sparse.random(256, 128, density=0.15, random_state=42)
+            # S = S.A
+            # S[S > 0] = 1
+            S = pd.read_csv(
+                '/home/owysocki/Insync/oskwys@gmail.com/Google Drive/SAFE_AI/CCE_DART/MOBER_results/masks/mask_2.csv',
+                index_col=0).values
+
+            mask_2 = torch.Tensor(S.T).to("cpu")
+            print(mask_2)
+            prune.custom_from_mask(self.encoder.fc2, 'weight', mask=mask_2)
 
     def forward(self, x, batch):
         means, stdev, enc = self.encoder(x)
         dec = self.decoder(enc, batch)
-        
+
         return dec, enc, means, stdev

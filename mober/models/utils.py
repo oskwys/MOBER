@@ -3,7 +3,7 @@ import torch
 from torch import optim, nn
 
 
-def create_model(model_cls, device, *args, filename=None, lr=1e-3, **kwargs):
+def create_model(model_cls, device, *args, filename=None, lr=1e-3, loaded=False, **kwargs):
     """
     Simple model serialization to resume training from given epoch.
 
@@ -15,7 +15,7 @@ def create_model(model_cls, device, *args, filename=None, lr=1e-3, **kwargs):
     :param kwargs: keyword arguments to be used by the model constructor
     :return:
     """
-    model = model_cls(*args, **kwargs)
+    model = model_cls(oaded=loaded, *args, **kwargs)
     optimizer = optim.Adam(model.parameters(), lr=lr)
     if filename is not None:
         checkpoint = torch.load(filename, map_location=torch.device("cpu"))

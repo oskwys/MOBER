@@ -60,6 +60,20 @@ def main():
     )
 
     tparser.add_argument(
+        "--f1_dim",
+        type=int,
+        default=256,
+        metavar='',
+        help="Size of the f1 layer. Default 256",
+    )
+    tparser.add_argument(
+        "--f2_dim",
+        type=int,
+        default=128,
+        metavar='',
+        help="Size of the f2 layer. Default 128",
+    )
+    tparser.add_argument(
         "--encoding_dim",
         type = int,
         default= 64,
