@@ -182,16 +182,14 @@ def main(args):
     
     
     set_seed(args.random_seed)
-    n_genes, f1_dim, f2_dim, enc_dim, n_batch, loaded = False
 
     model_BatchAE, optimizer_BatchAE = model_utils.create_model(BatchVAE,
                                                                 label_encode.shape[0],
-                                                                device=device,
+                                                                device,
                                                                 n_genes=features.shape[0],
                                                                 f1_dim=args.f1_dim,
                                                                 f2_dim=args.f2_dim,
                                                                 enc_dim=args.encoding_dim,
-                                                                loaded=False,
                                                                 lr=args.batch_ae_lr,
                                                                 filename=None)
 

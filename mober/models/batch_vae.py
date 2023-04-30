@@ -101,36 +101,13 @@ class BatchVAE(nn.Module):
     Decoder is symmetrical to encoder + Batch input.
     """
 
-    def __init__(self, n_genes, f1_dim, f2_dim, enc_dim, n_batch, loaded=False):
+    def __init__(self, n_genes, f1_dim, f2_dim, enc_dim, n_batch):
         super().__init__()
 
         self.encoder = Encoder(n_genes, f1_dim, f2_dim, enc_dim)
         self.decoder = Decoder(n_genes, f1_dim, f2_dim, enc_dim, n_batch)
 
-        # addiing MASK to layer 1
-        # S = scipy.sparse.random(n_genes, 256, density=0.15, random_state=42)
-        # S = S.A
-        # S[S > 0] = 1
-        if not loaded:
-            S = pd.read_csv(
-                '/home/owysocki/Insync/oskwys@gmail.com/Google Drive/SAFE_AI/CCE_DART/MOBER_results/masks/mask_1.csv',
-                index_col=0).values
 
-            mask_1 = torch.Tensor(S.T).to("cpu")
-            print(mask_1)
-            prune.custom_from_mask(self.encoder.fc1, 'weight', mask=mask_1)
-
-            # addiing MASK to layer 2
-            # S = scipy.sparse.random(256, 128, density=0.15, random_state=42)
-            # S = S.A
-            # S[S > 0] = 1
-            S = pd.read_csv(
-                '/home/owysocki/Insync/oskwys@gmail.com/Google Drive/SAFE_AI/CCE_DART/MOBER_results/masks/mask_2.csv',
-                index_col=0).values
-
-            mask_2 = torch.Tensor(S.T).to("cpu")
-            print(mask_2)
-            prune.custom_from_mask(self.encoder.fc2, 'weight', mask=mask_2)
 
     def forward(self, x, batch):
         means, stdev, enc = self.encoder(x)
