@@ -191,14 +191,16 @@ def main(args):
                                                                 args.encoding_dim,
                                                                 label_encode.shape[0],
                                                                 lr=args.batch_ae_lr,
-                                                                filename=None)
+                                                                filename=None,
+                                                                model_class='BatchVAE')
 
     model_src_adv, optimizer_src_adv = model_utils.create_model(MLP,
                                                                 device,
                                                                 args.encoding_dim,
                                                                 label_encode.shape[0],
                                                                 lr=args.src_adv_lr,
-                                                                filename=None)
+                                                                filename=None,
+                                                                model_class='MLP')
 
     
     

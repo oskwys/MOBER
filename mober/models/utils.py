@@ -6,7 +6,7 @@ import numpy as np
 import scipy
 import pandas as pd
 
-def create_model(model_cls, device, *args, filename=None, lr=1e-3, **kwargs):
+def create_model(model_cls, device, *args, filename=None, lr=1e-3,model_class='BatchVAE', **kwargs):
     """
     Simple model serialization to resume training from given epoch.
 
@@ -27,18 +27,19 @@ def create_model(model_cls, device, *args, filename=None, lr=1e-3, **kwargs):
 
         print(f"Loaded model epoch: {checkpoint['epoch']}, loss {checkpoint['loss']}")
     else:
-        # adding MASK to layer 1
-        S = pd.read_csv('mask_1.csv',index_col=0).values
-        mask_1 = torch.Tensor(S.T).to("cpu")
-        print(mask_1)
-        prune.custom_from_mask(model.encoder.fc1, 'weight', mask=mask_1)
+        if model_class=='BatchVAE':
+            # adding MASK to layer 1
+            S = pd.read_csv('mask_1.csv',index_col=0).values
+            mask_1 = torch.Tensor(S.T).to("cpu")
+            print(mask_1)
+            prune.custom_from_mask(model.encoder.fc1, 'weight', mask=mask_1)
 
-        # adding MASK to layer 2
-        S = pd.read_csv('mask_2.csv',index_col=0).values
+            # adding MASK to layer 2
+            S = pd.read_csv('mask_2.csv',index_col=0).values
 
-        mask_2 = torch.Tensor(S.T).to("cpu")
-        print(mask_2)
-        prune.custom_from_mask(model.encoder.fc2, 'weight', mask=mask_2)
+            mask_2 = torch.Tensor(S.T).to("cpu")
+            print(mask_2)
+            prune.custom_from_mask(model.encoder.fc2, 'weight', mask=mask_2)
     if device.type == "cuda" and torch.cuda.device_count() > 1:
         print("Loading model on ", torch.cuda.device_count(), "GPUs")
         model = nn.DataParallel(model)
