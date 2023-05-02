@@ -47,8 +47,10 @@ def load_model(model_dir, device):
     
     model, _ = model_utlis.create_model(BatchVAE, 
                                          device, 
-                                         features.shape[0], 
-                                         int(params.loc['encoding_dim','value']),  
+                                         features.shape[0],
+                                        int(params.loc['f1_dim', 'value']),
+                                        int(params.loc['f2_dim', 'value']),
+                                        int(params.loc['encoding_dim','value']),
                                          label_encode.shape[0],  
                                          filename=os.path.join(model_dir,'batch_ae_final.model'))
     return model, features, label_encode
